@@ -11,50 +11,10 @@ import seaborn as sns
 #choleski > householder and dolittle (AB decopm) > gram shmidt on nxp
 
 
-def _givens_rotation_matrix_entries(a, b):
-    """Compute matrix entries for Givens rotation."""
-    r = np.linalg.norm([a, b])
-    c = a/r
-    s = -b/r
 
-    return (c, s)
 
-def givens_rotation_danbar(A):
-    """Givens rotation found at: https://github.com/danbar/qr_decomposition/blob/master/qr_decomposition/qr_decomposition.py
+def my_plot(V, step, reps):
 
-    Args:
-        A ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
-    (num_rows, num_cols) = np.shape(A)
-
-    # Initialize orthogonal matrix Q and upper triangular matrix R.
-    Q = np.identity(num_rows)
-    R = np.copy(A)
-
-    # Iterate over lower triangular matrix.
-    (rows, cols) = np.tril_indices(num_rows, -1, num_cols)
-    for (row, col) in zip(rows, cols):
-
-        # Compute Givens rotation matrix and
-        # zero-out lower triangular matrix entries.
-        if R[row, col] != 0:
-            (c, s) = _givens_rotation_matrix_entries(R[col, col], R[row, col])
-
-            G = np.identity(num_rows)
-            G[[col, row], [col, row]] = c
-            G[row, col] = s
-            G[col, row] = -s
-
-            R = np.dot(G, R)
-            Q = np.dot(Q, G.T)
-
-    return (Q, R)
-            
-
-def main(V, step, reps):
     df = pd.DataFrame(columns=['i', 'time', 'exp'])
 
     for i in range(2, V, step):
@@ -92,32 +52,75 @@ def main(V, step, reps):
     plt.ylabel("Avg Time of {} trials (sec)".format(reps))
     plt.legend()
     plt.savefig('givens_time.png')
+            
 
-
-if __name__ == "__main__":
-    # main(100, 5, 30)
-
-
-    # mat = np.random.randint(10, size=(4, 4)).astype(float)
-    mat = np.array([[3, 4, 2, 1],
+def main():
+    mat_part = np.array([[3, 4, 2, 1],
+                    [5, 6, 7, 8],
+                    [3, 4, 5, 1]], dtype=float)
+    mat_add = np.array([1, 2, 3, 4], dtype=float)
+    
+    mat_full = np.array([[3, 4, 2, 1],
                     [5, 6, 7, 8],
                     [3, 4, 5, 1],
                     [1, 2, 3, 4]], dtype=float)
+    print("mat\n", mat_full)
+    
+    r = givens_rotation_danbar(mat_full)[1]
+    # q = givens_rotation_danbar(mat)[0]
+
+    # r_inverse = np.diag(1 / np.sqrt(np.diag(r)))
+    # print("r' r", (r_inverse @ r).T @ r)
+    # print('r', r)
+    # print('q', q)
+    
+    print("full\n", r)
+
+    r_part = givens_rotation_danbar(mat_part)[1]
+    r_add = givens_rotation_danbar(mat_add)[1]
+    r_part = np.vstack([r_part, r_add])
+    r_added = givens_rotation_danbar(r_part)[1]
+    print("added\n", r_added)
+
+    # permutation = [1, 2, 3, 0]
+    # idx = np.empty_like(permutation)
+    # idx[permutation] = np.arange(len(permutation))
+    # r_ordered = r[:, idx]
+    # print("r_ordered\n", r_ordered)
+    # r_reord = givens_rotation_danbar(r_ordered)[1]
+    # print("r_r_ordered\n", r_reord)
+
+
+
+    # permutation = [1, 2, 3, 0]
+    # idx = np.empty_like(permutation)
+    # idx[permutation] = np.arange(len(permutation))
+    # ordered = mat_full[:, idx]
+    # print("raw_ordered\n", ordered)
+    # r_reord1 = givens_rotation_danbar(ordered)[1]
+    # print("r_raw_reordered\n", r_reord1)
+
+    # print(np.array_equal(r_reord, r_reord1))
+
+    # ## undo permute
+    # undo_perm = [3, 1, 0, 2]
+    # idx = np.empty_like(undo_perm)
+    # idx[undo_perm] = np.arange(len(undo_perm))
+    # reord = r_reord[:, idx]
+    # print("reord\n", reord)
+    # r_undid = givens_rotation_danbar(reord)[1]
+    # print("r_undid\n", r_undid)
+
+
+if __name__ == "__main__":
+    main()
 
     # expected answer:  6.6332495807108	8.442317648177381	8.894584665044027	7.53778361444409
     #                   0	            0.8528028654224415	1.0660035817780529	0.42640143271122266
     #                   0	            0	                2.5980762113533156	2.8867513459481278
     #                   0	            0	                0	                4.0824829046386295
 
-    r = givens_rotation_danbar(mat)[1]
-    q = givens_rotation_danbar(mat)[0]
-    # r_inverse = np.diag(1 / np.sqrt(np.diag(r)))
-    # print("r' r", (r_inverse @ r).T @ r)
-    # print('r', r)
-    # print('q', q)
-    print(q @ r)
-    # print("r^t r", r.T @ r)
-    # print(givens_rotation(mat, exp=True))
+    
 
 
 
